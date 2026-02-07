@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+*.so
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+data/
+app.db
+ai_interactions.log
+.idea/
+.vscode/
+# Ignore root level files too if they accidentally get created outside Code/
+../app.db
+../ai_interactions.log

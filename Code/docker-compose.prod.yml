@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend.prod
+    image: ai-summarizer-backend:prod
+    container_name: ai_backend_prod
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      # Explicitly enable Postgres connection string construction
+      - USE_POSTGRES=True
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: always
+    logging:
+      driver: "awslogs"
+      options:
+        awslogs-group: "/ecs/ai-summarizer"
+        awslogs-region: "us-east-1"
+        awslogs-stream-prefix: "backend"
+        awslogs-create-group: "true"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend.prod
+    image: ai-summarizer-frontend:prod
+    container_name: ai_frontend_prod
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://backend:8000/api/v1
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    restart: always
+    logging:
+      driver: "awslogs"
+      options:
+        awslogs-group: "/ecs/ai-summarizer"
+        awslogs-region: "us-east-1"
+        awslogs-stream-prefix: "frontend"
+        awslogs-create-group: "true"
+
+  db:
+    image: postgres:13-alpine
+    container_name: ai_db_prod
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

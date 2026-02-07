@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pydantic
+sentence-transformers
+torch
+httpx
+pydantic-settings
+nltk
+sqlalchemy
+streamlit
+requests
+pandas
+psycopg2-binary
