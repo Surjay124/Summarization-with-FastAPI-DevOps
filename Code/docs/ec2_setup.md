@@ -7,7 +7,7 @@ This guide details the steps to manually provision an EC2 instance and prepare i
 1.  **Login to AWS Console** and navigate to **EC2**.
 2.  **Launch Instance**:
     - **Name**: `ai-summarizer-prod`
-    - **OS Image**: Ubuntu Server 22.04 LTS (HVM), SSD Volume Type.
+    - **OS Image**: Ubuntu Server 22.04 LTS or 24.04 LTS (HVM), SSD Volume Type.
     - **Instance Type**: `t2.micro` (free tier) or `t3.small` (recommended for ML models).
     - **Key Pair**: Create a new key pair (e.g., `ai-summarizer-key.pem`) and download it.
 3.  **Network Settings**:
@@ -36,29 +36,33 @@ ssh -i "path/to/ai-summarizer-key.pem" ubuntu@<EC2_PUBLIC_IP>
 Run the following commands on the EC2 instance:
 
 ```bash
-# Update packages
+# 1. Clean up potential previous failed attempts
+sudo rm -f /etc/apt/sources.list.d/docker.list
+sudo rm -f /etc/apt/keyrings/docker.gpg
+
+# 2. Update and Install Prerequisites
 sudo apt-get update
-sudo apt-get install -y ca-certificates curl gnupg
+sudo apt-get install -y ca-certificates curl
 
-# Add Docker's official GPG key
+# 3. Add Docker's official GPG key
 sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-sudo chmod a+r /etc/apt/keyrings/docker.gpg
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-# Set up the repository
+# 4. Add the repository to Apt sources
 echo \
-  "deb [arch=\"$(dpkg --print-architecture)\" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  \"$(. /etc/os-release && echo "$VERSION_CODENAME")\" stable" | \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# Install Docker Engine
+# 5. Install Docker
 sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# Add ubuntu user to docker group (so you don't need sudo)
-sudo usermod -aG docker param
-# NOTE: Log out and log back in for this to take effect!
-exit
+# 6. Post-installation steps
+sudo groupadd docker || true
+sudo usermod -aG docker ubuntu
+newgrp docker
 ```
 
 ## 4. Install AWS CLI (Optional but recommended for CloudWatch)
