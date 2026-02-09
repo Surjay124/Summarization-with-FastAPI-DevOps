@@ -67,50 +67,24 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
-          script: |
-            # Navigate to project directory
-            cd /home/ubuntu/ai-summarizer
+            # Define variables
+            APP_DIR="/home/ubuntu/ai-summarizer"
+            REPO_URL="https://github.com/${{ github.repository }}.git"
+            BRANCH="main"
             
-            # Pull latest code
-            git pull origin main
+            # Ensure directory exists and pull code MANUALLY first
+            # This solves the chicken-and-egg problem of trying to run a script that might not be there
+            if [ -d "$APP_DIR" ]; then
+                echo "Pulling latest code..."
+                cd $APP_DIR
+                git pull origin $BRANCH
+            else
+                echo "Cloning repository..."
+                git clone $REPO_URL $APP_DIR
+                cd $APP_DIR
+            fi
             
-            # Create/Update .env if needed (Managed manually or via secrets injection here)
-            
-            # Pull latest images
-            # We need to update docker-compose.prod.yml to point to the remote images 
-            # OR we override the image names here.
-            # Ideally, the docker-compose.prod.yml should use valid image tags.
-            # Assuming docker-compose.prod.yml relies on local build or we force pull.
-            
-            # Workaround: Re-export env vars for Docker Compose if needed
-            export POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-            export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            export POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-            
-            # Stop verify current state
-            docker compose -f docker-compose.prod.yml down
-            
-            # Since our compose file has 'build' contexts, 'up' might try to build locally.
-            # We want to use the images we just pushed.
-            # Strategy: We can use `docker compose pull` if the image names match what we pushed.
-            # In `docker-compose.prod.yml`, image is `ai-summarizer-backend:prod`.
-            # We pushed `${{ secrets.DOCKER_USERNAME }}/ai-summarizer-backend:latest`.
-            # Mismatch! 
-            
-            # FIX: We will instruct docker to run the specific image commands, or better:
-            # We update the compose file on the server to use the remote images.
-            # OR simpler for now: Just let the EC2 build it (simplest "Manual Deployment" automated).
-            # But "Prop CI/CD" implies using the artifacts.
-            
-            # Let's assume for this specific setup, rebuilding on EC2 is acceptable if we want to avoid 
-            # complex image tagging orchestration in the compose file right now. 
-            # BUT, the user asked for "Production-level". 
-            
-            # Let's adjust the script to Pull and Run.
-            # To do that, the docker-compose.yml must reference the registry image.
-            
-            # For now, running the build on EC2 is "safer" to ensure consistency with the repo env.
-            # So we will stick to the 'deploy_manual.sh' logic which does `up --build`.
-            # It burns CPU on EC2 but it's reliable without a private registry setup.
-            
+            # NOW we can run the script that is definitely there
+            # Note: The script is inside 'Code/scripts/' in the repo structure
+            chmod +x Code/scripts/deploy.sh
             sh Code/scripts/deploy.sh

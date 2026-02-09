@@ -11,11 +11,12 @@ echo "Starting Deployment..."
 
 # 1. Clone or Pull Code
 if [ -d "$APP_DIR" ]; then
-    echo "Directory exists. Pulling latest code..."
+    echo "Directory $APP_DIR exists. Pulling latest code..."
     cd $APP_DIR
+    git reset --hard origin/$BRANCH
     git pull origin $BRANCH
 else
-    echo "Cloning repository..."
+    echo "Directory $APP_DIR does not exist. Cloning repository..."
     git clone $REPO_URL $APP_DIR
     cd $APP_DIR
 fi
@@ -40,10 +41,10 @@ fi
 echo "Building and Deploying Containers..."
 
 # Stop existing containers if running
-docker compose -f docker-compose.prod.yml down
+docker compose -f Code/docker-compose.prod.yml down
 
 # Build and start
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f Code/docker-compose.prod.yml up -d --build
 
 echo "Deployment Complete!"
 echo "Backend running on port 8000"
