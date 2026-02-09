@@ -43,8 +43,11 @@ echo "Building and Deploying Containers..."
 # Stop existing containers if running
 docker compose -f Code/docker-compose.prod.yml down
 
-# Build and start
-docker compose -f Code/docker-compose.prod.yml up -d --build
+# PULL the pre-built images from Docker Hub (saves memory/CPU on EC2)
+docker compose -f Code/docker-compose.prod.yml pull
+
+# Start containers (no build)
+docker compose -f Code/docker-compose.prod.yml up -d
 
 echo "Deployment Complete!"
 echo "Backend running on port 8000"

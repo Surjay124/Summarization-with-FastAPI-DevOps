@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend.prod
-    image: ai-summarizer-backend:prod
+    image: ${DOCKER_USERNAME}/ai-summarizer-backend:latest
     container_name: ai_backend_prod
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -35,7 +35,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend.prod
-    image: ai-summarizer-frontend:prod
+    image: ${DOCKER_USERNAME}/ai-summarizer-frontend:latest
     container_name: ai_frontend_prod
     ports:
       - "8501:8501"
